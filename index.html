@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Control Panel</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .panel {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #333;
+        }
+        #terminal {
+            background: #000;
+            height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        #shellInput {
+            width: 100%;
+            background: #000;
+            color: #00ff00;
+            border: 1px solid #333;
+            padding: 5px;
+        }
+        #remoteScreen {
+            background: #000;
+            width: 100%;
+            height: 400px;
+        }
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="panel">
+            <h2>Web Shell</h2>
+            <div id="terminal"></div>
+            <input type="text" id="shellInput" placeholder="Enter command...">
+        </div>
+        <div class="panel">
+            <h2>Remote Desktop</h2>
+            <video id="remoteScreen" autoplay></video>
+            <div>
+                <button onclick="startCapture()">Start Screen Share</button>
+                <button onclick="stopCapture()">Stop Screen Share</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Web Shell Implementation
+        const terminal = document.getElementById('terminal');
+        const shellInput = document.getElementById('shellInput');
+        let commandHistory = [];
+        let historyIndex = -1;
+
+        function executeCommand(cmd) {
+            const output = `
+                $ ${cmd}
+                Executing: ${cmd}
+                Output: ${btoa(cmd)} // Base64 encoded command simulation
+            `;
+            terminal.innerHTML += output + '<br>';
+            terminal.scrollTop = terminal.scrollHeight;
+            commandHistory.push(cmd);
+            historyIndex = commandHistory.length;
+        }
+
+        shellInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = shellInput.value;
+                executeCommand(cmd);
+                shellInput.value = '';
+            }
+            // Command history navigation
+            if (e.key === 'ArrowUp') {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    shellInput.value = commandHistory[historyIndex];
+                }
+            }
+            if (e.key === 'ArrowDown') {
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    shellInput.value = commandHistory[historyIndex];
+                }
+            }
+        });
+
+        // Remote Desktop Implementation
+        const remoteScreen = document.getElementById('remoteScreen');
+        let mediaStream = null;
+
+        async function startCapture() {
+            try {
+                mediaStream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: "always"
+                    },
+                    audio: false
+                });
+                remoteScreen.srcObject = mediaStream;
+                terminal.innerHTML += 'Screen sharing started<br>';
+            } catch (err) {
+                terminal.innerHTML += `Error: ${err.message}<br>`;
+            }
+        }
+
+        function stopCapture() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                remoteScreen.srcObject = null;
+                terminal.innerHTML += 'Screen sharing stopped<br>';
+            }
+        }
+
+        // Initialize
+        terminal.innerHTML = 'Web Shell v1.0 - Ready<br>';
+    </script>
+</body>
+</html>
